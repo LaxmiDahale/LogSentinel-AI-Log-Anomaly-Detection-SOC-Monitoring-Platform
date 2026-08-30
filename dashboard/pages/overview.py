@@ -9,7 +9,7 @@ from src.ingestion.file_ingestion import process_and_ingest_file
 from src.detection.rule_engine import run_detection_pipeline
 from dashboard.components.metrics import render_kpi_cards
 from dashboard.components.charts import (
-    plot_events_over_time, plot_alerts_by_severity,
+    plot_threat_level_gauge, plot_events_over_time, plot_alerts_by_severity,
     plot_top_source_ips, plot_top_targeted_users,
     plot_auth_status_distribution, plot_ip_host_relationship
 )
@@ -21,71 +21,78 @@ def render_overview_page(db: Session):
     st.title("🛡️ LogSentinel AI — Security Operations Dashboard")
     st.caption("Production-Style Security Log Analysis & SOC Threat Monitoring Platform")
 
-    # Header Controls (Demo Data & File Upload)
-    c1, c2 = st.columns([1, 2])
-    with c1:
-        st.subheader("⚡ Demo Operations")
-        if st.button("🚀 Load Demo Dataset", type="primary", use_container_width=True):
-            with st.spinner("Processing synthetic security logs (Parsing → Normalizing → ML Detection → Scoring)..."):
-                clear_db()
-                if SAMPLE_AUTH_LOG.exists():
-                    with open(SAMPLE_AUTH_LOG, "r", encoding="utf-8") as f:
-                        content = f.read()
-                    process_and_ingest_file(db, content, filename="sample_auth.log")
-                    
-                    # Fetch ingested events and run detection
-                    db_events = db.query(EventModel).all()
-                    events_list = [
-                        {
-                            "event_id": e.event_id,
-                            "timestamp": e.timestamp,
-                            "hostname": e.hostname,
-                            "username": e.username,
-                            "source_ip": e.source_ip,
-                            "destination_ip": e.destination_ip,
-                            "status": e.status,
-                            "event_type": e.event_type
-                        }
-                        for e in db_events
-                    ]
-                    run_detection_pipeline(db, events_list)
-                    st.success("✅ Demo dataset loaded & analyzed successfully!")
-                    st.rerun()
-                else:
-                    st.error("Sample dataset file not found. Run generator script.")
+    # Top Operations & Threat Meter Row
+    c_ops, c_gauge = st.columns([2, 1])
 
-    with c2:
-        st.subheader("📥 Ingest Custom Security Log")
-        uploaded_file = st.file_uploader("Upload Log File (.log, .txt, .json, .csv)", type=["log", "txt", "json", "csv"])
-        if uploaded_file is not None:
-            if st.button("Ingest & Analyze File"):
-                with st.spinner("Ingesting and executing threat detection pipeline..."):
-                    content = uploaded_file.read().decode("utf-8", errors="replace")
-                    process_and_ingest_file(db, content, filename=uploaded_file.name)
-                    
-                    db_events = db.query(EventModel).all()
-                    events_list = [
-                        {
-                            "event_id": e.event_id,
-                            "timestamp": e.timestamp,
-                            "hostname": e.hostname,
-                            "username": e.username,
-                            "source_ip": e.source_ip,
-                            "destination_ip": e.destination_ip,
-                            "status": e.status,
-                            "event_type": e.event_type
-                        }
-                        for e in db_events
-                    ]
-                    run_detection_pipeline(db, events_list)
-                    st.success(f"✅ Log file '{uploaded_file.name}' ingested and analyzed!")
-                    st.rerun()
+    with c_ops:
+        st.subheader("⚡ Data Operations & Ingestion")
+        o1, o2 = st.columns(2)
+        with o1:
+            if st.button("🚀 Load Demo Dataset", type="primary", use_container_width=True):
+                with st.spinner("Executing full security pipeline (Parsing → Normalizing → ML Detection → Scoring)..."):
+                    clear_db()
+                    if SAMPLE_AUTH_LOG.exists():
+                        with open(SAMPLE_AUTH_LOG, "r", encoding="utf-8") as f:
+                            content = f.read()
+                        process_and_ingest_file(db, content, filename="sample_auth.log")
+                        
+                        db_events = db.query(EventModel).all()
+                        events_list = [
+                            {
+                                "event_id": e.event_id,
+                                "timestamp": e.timestamp,
+                                "hostname": e.hostname,
+                                "username": e.username,
+                                "source_ip": e.source_ip,
+                                "destination_ip": e.destination_ip,
+                                "status": e.status,
+                                "event_type": e.event_type
+                            }
+                            for e in db_events
+                        ]
+                        run_detection_pipeline(db, events_list)
+                        st.success("✅ Demo dataset loaded & analyzed!")
+                        st.rerun()
+                    else:
+                        st.error("Sample dataset file not found.")
 
-    st.markdown("---")
+        with o2:
+            uploaded_file = st.file_uploader("Upload Log (.log, .txt, .json, .csv)", type=["log", "txt", "json", "csv"], label_visibility="collapsed")
+            if uploaded_file is not None:
+                if st.button("📥 Ingest File", use_container_width=True):
+                    with st.spinner("Ingesting log file..."):
+                        content = uploaded_file.read().decode("utf-8", errors="replace")
+                        process_and_ingest_file(db, content, filename=uploaded_file.name)
+                        
+                        db_events = db.query(EventModel).all()
+                        events_list = [
+                            {
+                                "event_id": e.event_id,
+                                "timestamp": e.timestamp,
+                                "hostname": e.hostname,
+                                "username": e.username,
+                                "source_ip": e.source_ip,
+                                "destination_ip": e.destination_ip,
+                                "status": e.status,
+                                "event_type": e.event_type
+                            }
+                            for e in db_events
+                        ]
+                        run_detection_pipeline(db, events_list)
+                        st.success(f"✅ Ingested '{uploaded_file.name}'!")
+                        st.rerun()
 
-    # Fetch stats from DB
+    # Fetch data from DB
     events_query = db.query(EventModel).all()
     alerts_query = db.query(AlertModel).all()
+
+    # Calculate Max Threat Score
+    max_risk = max([e.risk_score for e in events_query]) if events_query else 0.0
+
+    with c_gauge:
+        st.plotly_chart(plot_threat_level_gauge(max_risk), use_container_width=True)
+
+    st.markdown("---")
 
     if not events_query:
         st.warning("⚠️ No logs ingested yet. Click '🚀 Load Demo Dataset' above to populate the SOC dashboard with realistic synthetic data.")
@@ -127,7 +134,7 @@ def render_overview_page(db: Session):
     unique_ips = events_df["source_ip"].dropna().nunique()
     unique_users = events_df["username"].dropna().nunique()
 
-    # Render KPI Cards
+    # Render High-Tech Dynamic KPI Cards
     render_kpi_cards(
         total_events, total_alerts, critical_alerts, high_alerts,
         anomalies, failed_logins, unique_ips, unique_users
