@@ -36,7 +36,7 @@ def plot_threat_level_gauge(risk_score: float):
         title={'text': f"<b>{status_text}</b>", 'font': {'size': 14, 'color': bar_color}},
         gauge={
             'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#8A99AD"},
-            'bar': {'color': bar_color, 'width': 0.3},
+            'bar': {'color': bar_color, 'thickness': 0.3},
             'bgcolor': "rgba(18, 25, 41, 0.8)",
             'borderwidth': 1,
             'bordercolor': "#1F293D",
