@@ -1,0 +1,3 @@
+"""
+Log ingestion package.
+"""

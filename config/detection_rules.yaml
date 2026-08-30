@@ -1,0 +1,35 @@
+# Detection Engine Configuration
+
+brute_force:
+  enabled: true
+  threshold: 5
+  window_minutes: 5
+  severity: HIGH
+  risk_points: 25
+
+password_spraying:
+  enabled: true
+  unique_users_threshold: 5
+  window_minutes: 10
+  severity: HIGH
+  risk_points: 30
+
+suspicious_success:
+  enabled: true
+  failed_attempt_threshold: 5
+  window_minutes: 15
+  severity: CRITICAL
+  risk_points: 40
+
+lateral_movement:
+  enabled: true
+  destination_threshold: 3
+  window_minutes: 15
+  severity: HIGH
+  risk_points: 35
+
+unusual_login:
+  enabled: true
+  unusual_hours: [0, 1, 2, 3, 4, 5]  # Midnight to 5 AM
+  severity: MEDIUM
+  risk_points: 15

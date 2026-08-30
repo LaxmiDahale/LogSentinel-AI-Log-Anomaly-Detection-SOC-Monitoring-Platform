@@ -1,0 +1,22 @@
+app:
+  name: "LogSentinel AI"
+  version: "1.0.0"
+  description: "Log Anomaly Detection & SOC Monitoring Platform"
+
+database:
+  url: "sqlite:///./logsentinel.db"
+  echo: false
+
+isolation_forest:
+  contamination: 0.05
+  n_estimators: 100
+  random_state: 42
+
+risk_scoring:
+  base_failed_auth: 5
+  base_multiple_users: 15
+  base_success_after_failure: 30
+  base_multiple_destinations: 20
+  base_ml_anomaly: 15
+
+max_upload_size_mb: 20

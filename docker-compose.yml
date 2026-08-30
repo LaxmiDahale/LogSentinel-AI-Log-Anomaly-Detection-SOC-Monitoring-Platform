@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  logsentinel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: logsentinel_ai
+    ports:
+      - "8501:8501"  # Streamlit SOC Dashboard
+      - "8000:8000"  # FastAPI REST API
+    environment:
+      - APP_ENV=production
+      - DATABASE_URL=sqlite:///./logsentinel.db
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./data:/app/data
+      - logsentinel_db:/app
+    restart: unless-stopped
+
+volumes:
+  logsentinel_db:
