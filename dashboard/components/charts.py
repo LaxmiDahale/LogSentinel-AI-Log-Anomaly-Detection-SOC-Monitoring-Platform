@@ -117,7 +117,7 @@ def plot_top_source_ips(df: pd.DataFrame, top_n: int = 10):
         labels={"count": "Event Count", "source_ip": "Source IP"},
         template=SOC_DARK_TEMPLATE,
         color="count",
-        color_continuous_scale="Cyan"
+        color_continuous_scale=["#00838F", "#00E5FF"]
     )
     fig.update_layout(
         yaxis=dict(autorange="reversed"),
@@ -140,7 +140,7 @@ def plot_top_targeted_users(df: pd.DataFrame, top_n: int = 10):
         labels={"username": "User", "count": "Attempts"},
         template=SOC_DARK_TEMPLATE,
         color="count",
-        color_continuous_scale="Purples"
+        color_continuous_scale=["#4A148C", "#B388FF"]
     )
     fig.update_layout(
         margin=dict(l=20, r=20, t=40, b=20),
@@ -218,7 +218,7 @@ def plot_ip_host_relationship(df: pd.DataFrame):
         grouped.head(50), x="source_ip", y="hostname", size="count", color="count",
         title="<b>Source IP -> Destination Host Interaction Density</b>",
         template=SOC_DARK_TEMPLATE,
-        color_continuous_scale="Reds"
+        color_continuous_scale=["#880E4F", "#FF1744"]
     )
     fig.update_layout(
         margin=dict(l=20, r=20, t=40, b=20),
